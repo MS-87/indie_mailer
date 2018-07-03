@@ -29,8 +29,12 @@ class MovieDB():
     def get_movie_list(self, time_delta = 7):
         #Get list of movies from last week
         movie_list = []
-        end_date = str(self.today)
-        start_date = str(self.today - timedelta(days=time_delta))
+        #end_date = str(self.today)
+        #start_date = str(self.today - timedelta(days=time_delta))
+
+        end_date = "2018-02-01"
+        start_date = "2018-01-01"
+
 
         #Probably break the next two calls into differnet functions
         try:
@@ -58,6 +62,7 @@ class MovieDB():
 
                 for movie in page_results['results']:
                     if movie['original_language'] == "en":
+                        #TODO ALSO FILTER ADULT FILMS & DOCUMENTARIES
                         mv = Movie(movie['id'], movie['title'], movie['genre_ids'], movie['release_date'], movie['overview'], movie['original_language'], self.OMDb_key, self.TMDb_key)
                         self.query_count_check()
                         mv.get_TMDb_data()
@@ -75,8 +80,9 @@ class MovieDB():
         #this will pause 10 seconds at 39 queries
         self.query_count += 1
         
-        if self.query_count == 39:
+        if self.query_count >= 39:
             print("Pausing for 10 seconds...")
+            self.query_count = 0
             sleep(10)
 
 
@@ -159,45 +165,8 @@ def print_list(movie_list):
 if __name__ == '__main__':
         
     moviedb = MovieDB()
-    a = moviedb.get_movie_list()
+    a = moviedb.get_movie_list(60)
     print_list(a)
-
-'''
-    #for movie in a:
-        #print(movie.title)
-    movie = a[1]
-    print(movie.title)
-    print(movie.TMDb_id)
-    print(movie.genres)
-    print(movie.release_date)
-    print(movie.synopsis_l)
-    print(movie.language)
-    print(movie.status)
-    print(movie.imdb_id)
-    print("$", movie.budget)
-    print(movie.synopsys_s)
-    print(movie.RT_rating)
-    print(movie.metascore)
-    print(movie.imdb_rating)
-    print(movie.imdb_votes)
-    print(movie.dvd_date)
-    print(movie.box_office)
-    print("")
-'''
-
-'''
-def OMDb_movie_example(OMDb_key, movie = "The Matrix"):
-    movie = json.loads(urllib.request.urlopen("http://www.omdbapi.com/?apikey={}&t={}&y=2018".format(OMDb_key, movie)).read())
-    title = movie['Title']
-    genre = movie['Genre']
-    plot = movie['Plot'] #there is also a long plot option
-    RT_rating = ['Ratings'][1]['Value']
-    IM_rating = ['Ratings'][0]['Value']
-
-def TMDB_movie_example():
-    pass
-    a = json.loads(urllib.request.urlopen("https://api.themoviedb.org/3/discover/movie?primary_release_date.gte=2018-03-15&primary_release_date.lte=2018-07-01&api_key={}&query=".format(apikey)).read())
-'''
 
 #from discover:
 #movie title -- title
