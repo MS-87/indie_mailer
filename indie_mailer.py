@@ -32,15 +32,17 @@ class MovieDB():
         #end_date = str(self.today)
         #start_date = str(self.today - timedelta(days=time_delta))
 
-        end_date = "2018-02-01"
-        start_date = "2018-01-01"
+        end_date = "2018-01-01"
+        start_date = "2017-11-01"
 
 
         #Probably break the next two calls into differnet functions
         try:
             self.query_count_check()
             movie_results = json.loads(urllib.request.urlopen( \
-            "https://api.themoviedb.org/3/discover/movie?primary_release_date.gte={sd}&primary_release_date.lte={ed}&api_key={ak}"\
+            "https://api.themoviedb.org/3/discover/movie?primary_release_date.gte={sd}"\
+            "&primary_release_date.lte={ed}&without_genres=99,10770,10402&include_adult=false"\
+            "&with_original_language=en&api_key={ak}"\
             .format(ak = self.TMDb_key, ed = end_date, sd = start_date))\
             .read())
 
@@ -56,18 +58,18 @@ class MovieDB():
                 self.query_count_check()
                 print("Parsing page {}.".format(page))
                 page_results = json.loads(urllib.request.urlopen( \
-                "https://api.themoviedb.org/3/discover/movie?primary_release_date.gte={sd}&primary_release_date.lte={ed}&api_key={ak}&page={pg}"\
+                "https://api.themoviedb.org/3/discover/movie?primary_release_date.gte={sd}"\
+                "&primary_release_date.lte={ed}&without_genres=99,10770,10402&include_adult=false"\
+                "&with_original_language=en&api_key={ak}&page={pg}"\
                 .format(ak = self.TMDb_key, ed = end_date, sd = start_date, pg = page))\
                 .read())
 
                 for movie in page_results['results']:
-                    if movie['original_language'] == "en":
-                        #TODO ALSO FILTER ADULT FILMS & DOCUMENTARIES
-                        mv = Movie(movie['id'], movie['title'], movie['genre_ids'], movie['release_date'], movie['overview'], movie['original_language'], self.OMDb_key, self.TMDb_key)
-                        self.query_count_check()
-                        mv.get_TMDb_data()
-                        mv.get_OMDb_data()
-                        movie_list.append(mv)
+                    mv = Movie(movie['id'], movie['title'], movie['genre_ids'], movie['release_date'], movie['overview'], movie['original_language'], self.OMDb_key, self.TMDb_key)
+                    self.query_count_check()
+                    mv.get_TMDb_data()
+                    mv.get_OMDb_data()
+                    movie_list.append(mv)
 
             except:
                 print("Error in pagination")
@@ -129,43 +131,48 @@ class Movie:
         self.dvd_date = None
         self.box_office = None
 
+        if self.status == 'Released' and self.imdb_id:
+            try:
+                movie_results = json.loads(urllib.request.urlopen( \
+                "http://www.omdbapi.com/?apikey={ak}&i={id}"\
+                .format(ak = self.OMDb_key, id = self.imdb_id))\
+                .read())
 
-        try:
-            movie_results = json.loads(urllib.request.urlopen( \
-            "http://www.omdbapi.com/?apikey={ak}&i={id}"\
-            .format(ak = self.OMDb_key, id = self.imdb_id))\
-            .read())
+                self.synopsys_s = movie_results['Plot']
+                self.RT_rating = None
+                for rating_source in movie_results['Ratings']:
+                    if rating_source['Source'] == 'Rotten Tomatoes':
+                        self.RT_rating = rating_source['Value']
 
-            self.synopsys_s = movie_results['Plot']
-            self.RT_rating = None
-            for rating_source in movie_results['Ratings']:
-                if rating_source['Source'] == 'Rotten Tomatoes':
-                    self.RT_rating = rating_source['Value']
-
-            self.metascore = movie_results['Metascore']
-            self.imdb_rating = movie_results['imdbRating']
-            self.imdb_votes = movie_results['imdbVotes']
-            self.dvd_date = movie_results['DVD']
-            self.box_office = movie_results['BoxOffice']
-        except:
-            print("Error in get_OMDb_data: {}".format(self.title))
+                self.metascore = movie_results['Metascore']
+                self.imdb_rating = movie_results['imdbRating']
+                self.imdb_votes = movie_results['imdbVotes']
+                self.dvd_date = movie_results['DVD']
+                self.box_office = movie_results['BoxOffice']
+            except:
+                print("Error in get_OMDb_data: {}".format(self.title))
         
 
 def print_list(movie_list):
     #Print full list of movies to CSV (as a validation test)
+    #TODO -- add dates in filename
+    
     csv_filename = ('movie_list.csv')
     fh = open(csv_filename,"wb")
     csv_out = unicodecsv.writer(fh, encoding='utf-8')
-    csv_out.writerow(["Title", "TMDb_id", "IMDb_id", "Release Date", "Synopsis Short", "Synopsis Long", "Language", "Status", "Budget", "RT Rating", "Metascore", "IMDb Rating", "IMDb Votes", "DVD Date", "Box Office"])
+    csv_out.writerow(["Title", "TMDb_id", "IMDb_id", "Release Date", "Synopsis Short", "Synopsis Long", "Language", "Status", "Budget", "RT Rating", "Metascore", "IMDb Rating", "IMDb Votes", "DVD Date", "Box Office", "Genre IDs"])
     for movie in movie_list:
-        csv_out.writerow([movie.title, movie.TMDb_id, movie.imdb_id, movie.release_date, movie.synopsys_s, movie.synopsis_l, movie.language, movie.status, movie.budget, movie.RT_rating, movie.metascore, movie.imdb_rating, movie.imdb_votes, movie.dvd_date, movie.box_office])
+        if movie.status == 'Released':
+            csv_out.writerow([movie.title, movie.TMDb_id, movie.imdb_id, movie.release_date, movie.synopsys_s, movie.synopsis_l, movie.language, movie.status, movie.budget, movie.RT_rating, movie.metascore, movie.imdb_rating, movie.imdb_votes, movie.dvd_date, movie.box_office, str(movie.genres)])
 
     fh.close()
 
 if __name__ == '__main__':
         
+    #TODO - filter out movies with no tt #.
+    #TODO - make sure we can capure errors to figure out why some movies are dropping
     moviedb = MovieDB()
-    a = moviedb.get_movie_list(60)
+    a = moviedb.get_movie_list(7)
     print_list(a)
 
 #from discover:
