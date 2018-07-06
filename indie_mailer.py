@@ -29,11 +29,11 @@ class MovieDB():
     def get_movie_list(self, time_delta = 7):
         #Get list of movies from last week
         movie_list = []
-        #end_date = str(self.today)
-        #start_date = str(self.today - timedelta(days=time_delta))
+        end_date = str(self.today)
+        start_date = str(self.today - timedelta(days=time_delta))
 
-        end_date = "2018-01-01"
-        start_date = "2017-11-01"
+        #end_date = "2018-01-01"
+        #start_date = "2017-11-01"
 
 
         #Probably break the next two calls into differnet functions
@@ -68,8 +68,9 @@ class MovieDB():
                     mv = Movie(movie['id'], movie['title'], movie['genre_ids'], movie['release_date'], movie['overview'], movie['original_language'], self.OMDb_key, self.TMDb_key)
                     self.query_count_check()
                     mv.get_TMDb_data()
-                    mv.get_OMDb_data()
-                    movie_list.append(mv)
+                    if mv.imdb_id: #check to see if movie has an IMDB ID
+                        mv.get_OMDb_data()
+                        movie_list.append(mv)
 
             except:
                 print("Error in pagination")
