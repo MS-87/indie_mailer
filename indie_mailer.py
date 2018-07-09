@@ -164,7 +164,6 @@ class Movie:
 
 def print_list(movie_list):
     #Print full list of movies to CSV (as a validation test)
-    #TODO -- add dates in filename
     date_time = datetime.datetime.today().strftime('%Y%m%d_%H%M%S')
 
     csv_filename = ('movie_lists/{}-movie_list.csv'.format(date_time))
@@ -179,21 +178,14 @@ def print_list(movie_list):
 
 if __name__ == '__main__':
         
-    #TODO - make sure we can capure errors to figure out why some movies are dropping
     moviedb = MovieDB()
     a = moviedb.get_movie_list(7)
     print_list(a)
 
-#from discover:
-#movie title -- title
-#id     -- id
-#genre       -- genre_ids
-#release dt  -- release_date
-#synopsis(long)  -- overview
-#lang        -- original_language
+#TODO - create permanent DB. Store results, don't search already existing movies.
+#must be able to update values though (esp dvd dates, ratings)
+#create additional fields for watched_status(watched, interested, not interested), filter off that
+#db gets filtered based on dvd dates, ratings, etc... can print said lists
 
-#from id search search: 'https://api.themoviedb.org/3/movie/351286?api_key=bdae228db10da126a4c1bb25e7ecba2d'
-
-#budget     -- budget
-#imdb_id    -- imdb_id
-#status     -- status 
+#TODO - after that, need to make UI which shows uer list of movies, and can set watched_status
+#Website maybe? Email?
