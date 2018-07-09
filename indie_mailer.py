@@ -13,6 +13,7 @@ Will also notify if they are on netflix
 import urllib.request
 import json
 from datetime import date, timedelta
+import datetime
 from time import sleep
 import unicodecsv
 import API_keys #.gitignored .py file
@@ -132,13 +133,19 @@ class Movie:
         self.dvd_date = None
         self.box_office = None
 
-        if self.status == 'Released' and self.imdb_id:
-            try:
-                movie_results = json.loads(urllib.request.urlopen( \
-                "http://www.omdbapi.com/?apikey={ak}&i={id}"\
-                .format(ak = self.OMDb_key, id = self.imdb_id))\
-                .read())
+        if self.status == 'Released' and self.imdb_id: #only query if movie is 'released' and has IMDB_id
+            
+            #request
+            movie_response = urllib.request.urlopen("http://www.omdbapi.com/?apikey={ak}&i={id}"\
+            .format(ak = self.OMDb_key, id = self.imdb_id))
 
+            #http response code (200 = OK)
+            http_code = movie_response.getcode()
+            movie_results = json.loads(movie_response.read()) #read data
+
+            response = movie_results['Response'] #OMDB DB response. if found = true, if not = false
+
+            if response == "True" and http_code == 200:
                 self.synopsys_s = movie_results['Plot']
                 self.RT_rating = None
                 for rating_source in movie_results['Ratings']:
@@ -150,15 +157,17 @@ class Movie:
                 self.imdb_votes = movie_results['imdbVotes']
                 self.dvd_date = movie_results['DVD']
                 self.box_office = movie_results['BoxOffice']
-            except:
-                print("Error in get_OMDb_data: {}".format(self.title))
+                #end of new code
+            else:  
+                print("{}, || Response:{} Code:{}".format(self.title, response, http_code))
         
 
 def print_list(movie_list):
     #Print full list of movies to CSV (as a validation test)
     #TODO -- add dates in filename
-    
-    csv_filename = ('movie_list.csv')
+    date_time = datetime.datetime.today().strftime('%Y%m%d_%H%M%S')
+
+    csv_filename = ('movie_lists/{}-movie_list.csv'.format(date_time))
     fh = open(csv_filename,"wb")
     csv_out = unicodecsv.writer(fh, encoding='utf-8')
     csv_out.writerow(["Title", "TMDb_id", "IMDb_id", "Release Date", "Synopsis Short", "Synopsis Long", "Language", "Status", "Budget", "RT Rating", "Metascore", "IMDb Rating", "IMDb Votes", "DVD Date", "Box Office", "Genre IDs"])
@@ -170,7 +179,6 @@ def print_list(movie_list):
 
 if __name__ == '__main__':
         
-    #TODO - filter out movies with no tt #.
     #TODO - make sure we can capure errors to figure out why some movies are dropping
     moviedb = MovieDB()
     a = moviedb.get_movie_list(7)
